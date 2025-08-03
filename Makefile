@@ -1,10 +1,14 @@
-all: snake
+TARGET = snake
+SRC = main.asm screen.asm
+OBJ = $(SRC:.asm=.o)
 
-snake: main.o
-	ld -m elf_i386 -o snake $^
+all: $(TARGET)
+
+$(TARGET): $(OBJ)
+	ld -m elf_i386 -o $@ $^
 
 %.o: %.asm
 	nasm -f elf32 $< -o $@
 
 clean:
-	rm -f *.o snake
+	rm -f *.o $(TARGET)
