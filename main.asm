@@ -7,28 +7,27 @@ global _start
 extern print_char
 
 _start:
-	push	word "a"
+	push	byte "a"
 
 	call	print_char
 
-	push	word "b"
+	push	byte "b"
 
 	call 	print_char
 
-	push	word 10
+	push	byte 10
 
 	call	print_char
 
-	push	word "J"
+	push	byte "J"
 
 	call	print_char
 
-	push	word 10
+	push	byte 10
 
 	call	print_char
 
 	call	exit
-
 
 clear_screen:
 	mov	eax, 4		; sys_write 0x04
