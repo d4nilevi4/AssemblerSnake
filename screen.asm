@@ -14,6 +14,7 @@
 [section .text]
 	global print_char
 	global print_line
+	global clear_scr
 
 print_char:
 
@@ -56,6 +57,24 @@ print_line:
 .done:	popad				; restore all extended registers
 
 	ret
+
+clear_scr:
+
+	mov	eax, 4			; syswrite
+	mov	ebx, 1			; stdout
+	mov	edx, 4			; size
+
+	mov	ecx, .cursor_home	; payload
+	int	0x80
+
+	mov	ecx, .ansi		; payload
+	int	0x80			; syscal
+
+	ret
+
+.ansi:	db 27, "[J", 0
+.cursor_home:
+	db 27, "[H", 0
 
 print_at:
     push ebp
