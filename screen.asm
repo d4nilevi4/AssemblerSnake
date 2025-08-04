@@ -1,25 +1,28 @@
+%include "stud_io.inc"
+
 [section .data]
 	test_escape	db 27, "[0;0H" ,0
 
 [section .bss]
-	char_buf	resb 1
+	char_buf	resb 4
 	line_length	resb 4
 	escape_buffer	resb 16
 	toascii_buf	resb 12
+	ret_adr		resb 4
+	text_adr	resb 4
 
 [section .text]
 	global print_char
 	global print_line
 
 print_char:
-	; push all used registers to save them
-	push	eax			; [esp+16]
-	push	ebx			; [esp+12]
-	push	ecx			; [esp+8]
-	push	edx			; [esp+4]
 
-	mov	eax, [esp+20]		; get character adress
-	mov	[char_buf], eax		; move adress to char_buf
+	pop 	dword [ret_adr]		; save return adress
+	pop	dword [char_buf]	; save character
+	push	dword [ret_adr]		; push return adress
+
+	; push all used registers to save them
+	pushad
 
 	mov	eax, 4			; sys_write
 	mov	ebx, 1			; stdout
@@ -28,19 +31,29 @@ print_char:
 	int	0x80			; syscall
 
 	; restore registers values
-	pop	edx
-	pop	ecx
-	pop	ebx
-	pop	eax
+	popad
 
 	ret
 
 print_line:
 
+	pop	dword [ret_adr]		; save rutrn adress
+	pop	dword [text_adr]	; save text adress
+	push	dword [ret_adr]		; restore return adress
 
+	pushad				; save all extended registers
 
-;	mov	esi, [esp+4]
-;	mov	[
+	mov	eax, [text_adr]		; save text adress into eax
+
+.lp:	mov	bl, [eax]		; get character from eax
+	cmp	bl, 0			; compare bl with 0
+	je	.done			; if b == 0 then return
+	push	ebx			; push character to stack
+	call	print_char		; call print chacacter procedure
+	inc	al			; look for next character
+	jmp	.lp			; jump into start loop
+
+.done:	popad				; restore all extended registers
 
 	ret
 
