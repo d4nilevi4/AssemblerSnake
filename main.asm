@@ -10,16 +10,18 @@ global	_start
 extern	print_char
 extern	print_line
 extern	clear_scr
+extern	set_pos
 
 _start:
 
 	call	clear_scr
 
-	push	dword "A"
-	call	print_char
+	push	dword 57
+	push	dword 53
+	call	set_pos
 
-	push	dword 10
-	call	print_char
+;	push	dword 10
+;	call	print_char
 
 	push	dword text
 	call	print_line

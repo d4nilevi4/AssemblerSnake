@@ -1,20 +1,21 @@
 %include "stud_io.inc"
 
 [section .data]
-	test_escape	db 27, "[0;0H" ,0
+	escape		db 27
 
 [section .bss]
 	char_buf	resb 4
-	line_length	resb 4
-	escape_buffer	resb 16
-	toascii_buf	resb 12
+	escape_buf	resb 32
 	ret_adr		resb 4
 	text_adr	resb 4
+	xPos		resb 4
+	yPos		resb 4
 
 [section .text]
 	global print_char
 	global print_line
 	global clear_scr
+	global set_pos
 
 print_char:
 
@@ -60,6 +61,8 @@ print_line:
 
 clear_scr:
 
+	pushad
+
 	mov	eax, 4			; syswrite
 	mov	ebx, 1			; stdout
 	mov	edx, 4			; size
@@ -70,123 +73,65 @@ clear_scr:
 	mov	ecx, .ansi		; payload
 	int	0x80			; syscal
 
+	popad
+
 	ret
 
 .ansi:	db 27, "[J", 0
 .cursor_home:
 	db 27, "[H", 0
 
-print_at:
-    push ebp
-    mov ebp, esp
+set_pos: ;ESC[{line};{column}H
 
-    push eax
-    push ebx
-    push ecx
-    push edx
-    push esi
-    push edi
+	pop	dword [ret_adr]	; save return adress
+	pop	dword [yPos]
+	pop	dword [xPos]
+	push	dword [ret_adr]	; restore return adress
 
-    ; -- Сформировать ESC[y;xH] строку --
-    mov esi, escape_buffer
+	pushad
 
-    mov byte [esi], 27        ; ESC
-    inc esi
-    mov byte [esi], '['       ; [
-    inc esi
+	push	dword 0
+	push	dword "H"
+	push	dword [xPos]
+	push	dword ";"
+	push	dword [yPos]
+	push	dword "["
+	push	dword 27
 
-    ; y -> строка
-    mov eax, [ebp+8]
-    call int_to_ascii
-    mov edi, eax
-.copy_y:
-    lodsb
-    test al, al
-    je .after_y
-    stosb
-    jmp .copy_y
-.after_y:
+	call	form_escape
 
-    mov byte [esi], ';'
-    inc esi
+	pop	edx
+	mov	eax, 4
+	mov	ebx, 1
+	mov	ecx, escape_buf
+	int	0x80
 
-    ; x -> строка
-    mov eax, [ebp+12]
-    call int_to_ascii
-    mov edi, eax
-.copy_x:
-    lodsb
-    test al, al
-    je .after_x
-    stosb
-    jmp .copy_x
-.after_x:
+	popad
 
-    mov byte [esi], 'H'
-    inc esi
-    mov byte [esi], 0         ; null terminator
+	ret
 
-    ; -- Печать управляющей последовательности --
-    mov eax, 4
-    mov ebx, 1
-    mov ecx, escape_buffer
-    mov edx, esi
-    sub edx, escape_buffer
-    int 0x80
+form_escape:
 
-    ; -- Печать самого символа --
-    mov al, byte [ebp+4]
-    mov [char_buf], al
+	pop	dword [ret_adr]		; save return adress
 
-    mov eax, 4
-    mov ebx, 1
-    mov ecx, "H"
-    mov edx, 1
-    int 0x80
+	xor	ecx, ecx
 
-    ; -- Завершение --
-    pop edi
-    pop esi
-    pop edx
-    pop ecx
-    pop ebx
-    pop eax
-    pop ebp
-    ret 12
+	mov	esi, escape_buf
+.lp:
+	pop	eax
+	cmp	al, 0
+	je	.done
 
-; --- int_to_ascii: преобразует EAX в строку ---
-; возвращает EAX = указатель на строку
+	mov	[esi], eax
 
-int_to_ascii:
-    push ebx
-    push ecx
-    push edx
-    push edi
+	inc	cl
+	add	esi, ecx
+	jmp	.lp
 
-    mov edi, toascii_buf
-    mov ecx, 10
-    xor ebx, ebx
+.done:	mov	eax, ecx
+	mov	ecx, 4
+	mul	ecx
+	push	eax
+	push	dword [ret_adr]		; restore return adress
 
-.convert:
-    xor edx, edx
-    div ecx
-    add dl, '0'
-    push dx
-    inc ebx
-    test eax, eax
-    jnz .convert
-
-.build:
-    pop ax
-    stosb
-    dec ebx
-    jnz .build
-
-    mov byte [edi], 0
-    mov eax, toascii_buf
-
-    pop edi
-    pop edx
-    pop ecx
-    pop ebx
-    ret
+	ret
