@@ -1,16 +1,17 @@
 %include "stud_io.inc"
 
 [section .data]
-	escape		db 27
+	escape		db 27		; escape ASCII code, start for ANSI escape codes
+	screen_width	db 80		; screen width size
+	screen_hight	db 43		; ccreen heigh size
 
 [section .bss]
-	char_buf	resb 4
-	escape_buf	resb 32
-	ret_adr		resb 4
-	text_adr	resb 4
-	ascii_char	resb 4
-	xPos		resb 4
-	yPos		resb 4
+	char_buf	resb 4		; char buffer used for save character to print in some place
+	escape_buf	resb 32		; buffer for escape secuence
+	ret_adr		resb 4		; retur addres
+	text_adr	resb 4		; pointer on text
+	xPos		resb 4		; cursor x position
+	yPos		resb 4		; cursor y position
 
 [section .text]
 	global print_char
@@ -18,14 +19,14 @@
 	global clear_scr
 	global set_pos
 
+; pop character code from stack, and print one character
 print_char:
 
 	pop 	dword [ret_adr]		; save return adress
 	pop	dword [char_buf]	; save character
 	push	dword [ret_adr]		; push return adress
 
-	; push all used registers to save them
-	pushad
+	pushad				; push all used registers to save them
 
 	mov	eax, 4			; sys_write
 	mov	ebx, 1			; stdout
@@ -38,6 +39,7 @@ print_char:
 
 	ret
 
+; pop text adress from stack, and print one by one character, until find zero code '0'
 print_line:
 
 	pop	dword [ret_adr]		; save rutrn adress
@@ -60,9 +62,10 @@ print_line:
 
 	ret
 
+; clear screen procedure
 clear_scr:
 
-	pushad
+	pushad				; push all extended registers
 
 	mov	eax, 4			; syswrite
 	mov	ebx, 1			; stdout
@@ -74,93 +77,103 @@ clear_scr:
 	mov	ecx, .ansi		; payload
 	int	0x80			; syscal
 
-	popad
+	popad				; restore all extended registers
 
 	ret
 
-.ansi:	db 27, "[J", 0
+.ansi:	db 27, "[J", 0			; ANSI escape code to cleal screen
 .cursor_home:
-	db 27, "[H", 0
+	db 27, "[H", 0			; ANSI escape code to move cursor (0,0) position
 
-set_pos: ;ESC[{line};{column}H
+; pop x and y position from stack and move cursor in (x, y) position
+set_pos: ; ANSI escape code ESC[{line};{column}H
 
-	pop	dword [ret_adr]	; save return adress
-	pop	dword [yPos]
-	pop	dword [xPos]
-	push	dword [ret_adr]	; restore return adress
+	pop	dword [ret_adr]		; save return adress
+	pop	dword [yPos]		; pop y position value
+	pop	dword [xPos]		; pop x position value
+	push	dword [ret_adr]		; restore return adress
 
-	pushad
+	pushad				; save all extended registers in stack
 
-	push	dword 27
-	call	print_char
-	push	dword "["
-	call	print_char
-	push	dword [yPos]
-	call	print_int
-	push	dword ";"
-	call	print_char
-	push	dword [xPos]
-	call	print_int
-	push	dword "H"
-	call	print_char
+	push	dword [escape]		; start ansi escape code, push ESC code
+	call	print_char		; call print character procedure
+	push	dword "["		; push secode ansi escape code character
+	call	print_char		; call print character procedure
+	push	dword [yPos]		; push y position value to stack
+	call	print_int		; print y position into stdout
+	push	dword ";"		; push ; into stack
+	call	print_char		; call print character procedure
+	push	dword [xPos]		; push x position value to stack
+	call	print_int		; print x position into stdout
+	push	dword "H"		; push last asni escape code character
+	call	print_char		; call print character procedure
 
-	popad
+	popad				; restore all extended registers
 
 	ret
 
-form_escape:
+; generates a ANSI escape code, pop from stack character and store them into [escape_buf], until find zero code '0'
+; push into stack size of escape buffer
+; EXAMPLE move cursor to (0,0) position ANSI escape code
+;	push	dword 0
+;	push	dword "H"
+;	push	dword "["
+;	push	dword [escape]
+;	call	gen_escape
+
+gen_escape:
 
 	pop	dword [ret_adr]		; save return adress
 
-	xor	ecx, ecx
+	xor	ecx, ecx		; ecx := 0
 
-	mov	esi, escape_buf
+	mov	esi, escape_buf		; save escape_buf pointer
 .lp:
-	pop	eax
-	cmp	al, 0
-	je	.done
+	pop	eax			; pop character from stack
+	cmp	al, 0			; compare al with zero code '0'
+	je	.done			; jump in end of procedure if find zero code
 
-	mov	[esi], eax
+	mov	[esi], eax		; move character in [esi] adress
 
-	inc	cl
-	add	esi, ecx
-	jmp	.lp
+	inc	cl			; increment cl counter
+	add	esi, ecx		; shift esi adress on characters counter value
+	jmp	.lp			; jump into start loop
 
-.done:	mov	eax, ecx
-	mov	ecx, 4
-	mul	ecx
-	push	eax
+.done:	mov	eax, ecx		; move characters count value in eax register
+	mov	ecx, 4			; move 4 into ecx (size of dword)
+	mul	ecx			; multiply eax on ecx (count_of_characters*4)
+	push	eax			; push result ANSI escape code size
 	push	dword [ret_adr]		; restore return adress
 
 	ret
 
 print_int:
 
-	pop	dword [ret_adr]
-	pop	dword [ascii_char]
-	push	dword [ret_adr]
+	pop	dword [ret_adr]		; save return adress
+	pop	dword [char_buf]	; save integer
+	push	dword [ret_adr]		; restore return adress
 
-	pushad
+	pushad				; push all extended registers
 
-	mov	ecx, 10
-	xor	ebx, ebx
-	mov	eax, [ascii_char]
+	mov	ecx, 10			; ecx := 10
+	xor	ebx, ebx		; ebx := 0 (symbols counter)
+	mov	eax, [char_buf]		; save integer into eax
 
 .reverse:
-	xor	edx, edx
-	div	ecx
-	add	dl, '0'
+	xor	edx, edx		; edx := 0
+	div	ecx			; divide eax on ecx and move remider from division into edx
+	add	dl, '0'			; make from edx value ASCII code of this value ('0' == 0x30)
 
-	push	edx
-	inc	ebx
+	push	edx			; push ASCII code value
+	inc	ebx			; increment ebx the symbols counter
 
-	test	eax, eax
-	jnz	.reverse
+	test	eax, eax		; compare eax with 0. Same: "cmp eax, 0"
+	jnz	.reverse		; jump if zero into start of reverse loop
 
 .print:
-	call	print_char
-	dec	ebx
-	jnz	.print
+	call	print_char		; pprint character from stack
+	dec	ebx			; decrement ebx (symbols counter)
+	jnz	.print			; jump if zero into start of print loop
 
-	popad
+	popad				; restore all extended registers
 	ret

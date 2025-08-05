@@ -1,6 +1,4 @@
 [section .data]
-screen_width	dd 80
-screen_height	dd 43
 test_text	db "THIS IS THE TEXT TEXT FOR DEBUG", 10, 0
 text		db "Welcome to the 'Assybler Snake' game!", 10, 0
 text_len	dw 10
@@ -19,9 +17,6 @@ _start:
 	push	dword 50
 	push	dword 20
 	call	set_pos
-
-;	push	dword 10
-;	call	print_char
 
 	push	dword text
 	call	print_line
