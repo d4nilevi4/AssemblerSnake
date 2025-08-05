@@ -114,7 +114,7 @@ set_pos: ; ANSI escape code ESC[{line};{column}H
 
 ; generates a ANSI escape code, pop from stack character and store them into [escape_buf], until find zero code '0'
 ; push into stack size of escape buffer
-; EXAMPLE move cursor to (0,0) position ANSI escape code
+; EXAMPLE move cursor to (0,0) position ANSI escape code -> "ESC[H"
 ;	push	dword 0
 ;	push	dword "H"
 ;	push	dword "["
@@ -147,6 +147,11 @@ gen_escape:
 
 	ret
 
+; print character value as number, pop from stack dword number
+; EXAMPLE
+; push	dword 10
+; call	print_int
+; OUTPUT "10"
 print_int:
 
 	pop	dword [ret_adr]		; save return adress
