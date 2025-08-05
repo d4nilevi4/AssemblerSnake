@@ -16,8 +16,8 @@ _start:
 
 	call	clear_scr
 
-	push	dword 57
-	push	dword 53
+	push	dword 50
+	push	dword 20
 	call	set_pos
 
 ;	push	dword 10

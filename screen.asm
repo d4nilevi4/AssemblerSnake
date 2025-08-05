@@ -8,6 +8,7 @@
 	escape_buf	resb 32
 	ret_adr		resb 4
 	text_adr	resb 4
+	ascii_char	resb 4
 	xPos		resb 4
 	yPos		resb 4
 
@@ -90,21 +91,18 @@ set_pos: ;ESC[{line};{column}H
 
 	pushad
 
-	push	dword 0
-	push	dword "H"
-	push	dword [xPos]
-	push	dword ";"
-	push	dword [yPos]
-	push	dword "["
 	push	dword 27
-
-	call	form_escape
-
-	pop	edx
-	mov	eax, 4
-	mov	ebx, 1
-	mov	ecx, escape_buf
-	int	0x80
+	call	print_char
+	push	dword "["
+	call	print_char
+	push	dword [yPos]
+	call	print_int
+	push	dword ";"
+	call	print_char
+	push	dword [xPos]
+	call	print_int
+	push	dword "H"
+	call	print_char
 
 	popad
 
@@ -134,4 +132,35 @@ form_escape:
 	push	eax
 	push	dword [ret_adr]		; restore return adress
 
+	ret
+
+print_int:
+
+	pop	dword [ret_adr]
+	pop	dword [ascii_char]
+	push	dword [ret_adr]
+
+	pushad
+
+	mov	ecx, 10
+	xor	ebx, ebx
+	mov	eax, [ascii_char]
+
+.reverse:
+	xor	edx, edx
+	div	ecx
+	add	dl, '0'
+
+	push	edx
+	inc	ebx
+
+	test	eax, eax
+	jnz	.reverse
+
+.print:
+	call	print_char
+	dec	ebx
+	jnz	.print
+
+	popad
 	ret
