@@ -1,5 +1,5 @@
 TARGET = snake
-SRC = main.asm screen.asm
+SRC = main.asm screen.asm cursor.asm
 OBJ = $(SRC:.asm=.o)
 
 all: $(TARGET)

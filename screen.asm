@@ -17,7 +17,8 @@
 	global print_char
 	global print_line
 	global clear_scr
-	global set_pos
+	global gen_escape
+	global print_int
 
 ; pop character code from stack, and print one character
 print_char:
@@ -84,33 +85,6 @@ clear_scr:
 .ansi:	db 27, "[J", 0			; ANSI escape code to cleal screen
 .cursor_home:
 	db 27, "[H", 0			; ANSI escape code to move cursor (0,0) position
-
-; pop x and y position from stack and move cursor in (x, y) position
-set_pos: ; ANSI escape code ESC[{line};{column}H
-
-	pop	dword [ret_adr]		; save return adress
-	pop	dword [yPos]		; pop y position value
-	pop	dword [xPos]		; pop x position value
-	push	dword [ret_adr]		; restore return adress
-
-	pushad				; save all extended registers in stack
-
-	push	dword [escape]		; start ansi escape code, push ESC code
-	call	print_char		; call print character procedure
-	push	dword "["		; push secode ansi escape code character
-	call	print_char		; call print character procedure
-	push	dword [yPos]		; push y position value to stack
-	call	print_int		; print y position into stdout
-	push	dword ";"		; push ; into stack
-	call	print_char		; call print character procedure
-	push	dword [xPos]		; push x position value to stack
-	call	print_int		; print x position into stdout
-	push	dword "H"		; push last asni escape code character
-	call	print_char		; call print character procedure
-
-	popad				; restore all extended registers
-
-	ret
 
 ; generates a ANSI escape code, pop from stack character and store them into [escape_buf], until find zero code '0'
 ; push into stack size of escape buffer
