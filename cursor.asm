@@ -5,13 +5,103 @@
 	ret_adr		resb 4		; return adress
 	xPos		resb 4		; cursor x position
 	yPos		resb 4		; cursor y position
+	offset		resb 4		; offset value
 
 [section .text]
 
 global set_pos
+global cursor_up
+global cursor_down
+global cursor_left
+global cursor_right
 
 extern print_char
 extern print_int
+extern gen_escape
+
+cursor_up: ; ANSI escape code ESC[{offset}A
+
+	pop	dword [ret_adr]		; save return adress
+	pop	dword [offset]		; pop offset value
+	push	dword [ret_adr]		; restore return adress
+
+	pushad				; save all extended registers in stack
+
+	push	dword [escape]
+	call	print_char
+	push	dword "["
+	call	print_char
+	push	dword [offset]
+	call	print_int
+	push	dword "A"
+	call	print_char
+
+	popad
+
+	ret
+
+cursor_down: ; ANSI escape code ESC[{offset]B
+
+	pop	dword [ret_adr]
+	pop	dword [offset]
+	push	dword [ret_adr]
+
+	pushad
+
+	push	dword [escape]
+	call	print_char
+	push	dword "["
+	call	print_char
+	push	dword [offset]
+	call	print_int
+	push	dword "B"
+	call	print_char
+
+	popad
+
+	ret
+
+cursor_right: ; ANSI escape code ESC[{offset}C
+
+	pop	dword [ret_adr]
+	pop	dword [offset]
+	push	dword [ret_adr]
+
+	pushad
+
+	push	dword [escape]
+	call	print_char
+	push	dword "["
+	call	print_char
+	push	dword [offset]
+	call	print_int
+	push	dword "C"
+	call	print_char
+
+	popad
+
+	ret
+
+cursor_left: ; ANSI escape code ESC[{offset}D
+
+	pop	dword [ret_adr]
+	pop	dword [offset]
+	push	dword [ret_adr]
+
+	pushad
+
+	push	dword [escape]
+	call	print_char
+	push	dword "["
+	call	print_char
+	push	dword [offset]
+	call	print_int
+	push	dword "D"
+	call	print_char
+
+	popad
+
+	ret
 
 ; pop x and y position from stack and move cursor in (x, y) position
 set_pos: ; ANSI escape code ESC[{line};{column}H

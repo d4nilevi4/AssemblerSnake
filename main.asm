@@ -9,14 +9,30 @@ extern	print_char
 extern	print_line
 extern	clear_scr
 extern	set_pos
+extern	cursor_up
+extern 	cursor_down
+extern	cursor_left
+extern	cursor_right
 
 _start:
 
 	call	clear_scr
 
-	push	dword 50
-	push	dword 20
-	call	set_pos
+;	push	dword 50
+;	push	dword 20
+;	call	set_pos
+
+	push	dword 10
+	call	cursor_down
+
+	push	dword 10
+	call	cursor_right
+
+	push	dword 5
+	call	cursor_up
+
+	push	dword 8
+	call	cursor_left
 
 	push	dword text
 	call	print_line
