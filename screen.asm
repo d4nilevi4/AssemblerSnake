@@ -2,8 +2,10 @@
 
 [section .data]
 	escape		db 27		; escape ASCII code, start for ANSI escape codes
-	screen_width	db 80		; screen width size
-	screen_hight	db 43		; ccreen heigh size
+	screen_width	db 42		; screen width size
+	screen_height	db 21		; ccreen heigh size
+	welcome_txt	db "Welcome to the 'Assembler Snake' game!", 0
+	press_enter_txt	db "Press ENTER button to continue...", 0
 
 [section .bss]
 	char_buf	resb 4		; char buffer used for save character to print in some place
@@ -14,11 +16,131 @@
 	yPos		resb 4		; cursor y position
 
 [section .text]
-	global print_char
-	global print_line
-	global clear_scr
-	global gen_escape
-	global print_int
+global	print_char
+global	print_line
+global	clear_scr
+global	gen_escape
+global	print_int
+global	print_frame
+global	welcome_screen
+
+extern	cursor_up
+extern	cursor_down
+extern	cursor_left
+extern	cursor_right
+extern	set_pos
+
+; print welcome screen
+welcome_screen:
+
+	pushad				; push all extended registers
+
+	call	clear_scr		; call clear screen procedure
+	call	print_frame		; call print frame procedure
+
+	mov	al, [screen_height]	; save screen height into al
+	mov	cl, 2			; move into cl regitster 2
+	div	ecx			; divide eax on ecx
+
+	push	dword 3			; push x cursor position
+	push	eax			; push y cursor position
+	call	set_pos			; call set cursor position procedure
+
+	push	dword welcome_txt	; push welocome text pointer
+	call	print_line		; call print line procedure
+
+	inc	al			; increment y cursor position (next line)
+
+	push	dword 5			; push x cursor position
+	push	eax			; push y cursor position
+	call	set_pos			; call set cursor position procedure
+
+	push	dword press_enter_txt	; push press enter text pointer
+	call	print_line		; call print line procedure
+
+	mov	dl, [screen_height]	; save screen heigh
+	inc	dl			; increment dl
+	push	dword 0			; push x cursor position
+	push	dword edx		; push y cursor position
+	call	set_pos			; call set cursor position procedure
+
+	popad				; pop all extended registers
+
+	ret
+
+; print main frame
+; ----------------
+; |              |
+; |              |
+; |              |
+; |              |
+; ----------------
+print_frame:
+
+	pushad				; save all extended registers
+
+	mov	cl, [screen_width]	; save screen width in counter
+
+; print up side of frame
+
+.lp_0:	push	dword [.up_frame]	; push up frame character
+	call	print_char		; call print character procedure
+	loop	.lp_0			; jump in start of loop if ecx not zero
+
+; print down side of frame
+
+	push	dword 0			; push x cursor position
+	mov	dl, [screen_height]	; move screen height in dl register
+	push	edx			; push y cursor position
+	call	set_pos			; call set cursor position procedure
+	mov	cl, [screen_width]	; save screen width in counter
+.lp_1:	push	dword [.up_frame]	; push up frame character
+	call	print_char		; call print character procedure
+	loop	.lp_1			; jump in start of loop if ecx not zero
+
+; print right side of frame
+
+	xor	eax, eax		; eax := 0
+	xor	ecx, ecx		; ecx := 0
+
+	mov	cl, [screen_height]	; save screen height in counter
+	dec	cl			; decrement cl because one pixel is occupied by the top side
+	dec	cl			; decrement cl because one pixel is occupied by the bottom side
+
+.lp_2:	mov	al, [screen_height]	; move into al screen height
+	sub	al, cl			; calcuate current cursor y position
+	mov	dl, [screen_width]	; move into dl screen width
+	push	edx			; push x cursor position
+	push	eax			; push y cursor position
+	call	set_pos			; call set cursor position procedure
+	push	dword [.side_frame]	; push side frame character
+	call	print_char		; call print character procedure
+	loop	.lp_2			; jump in start of loop if ecx not zero
+
+; print left side of frame
+
+	xor	eax, eax		; eax := 0
+	xor	ecx, ecx		; ecx := 0
+
+	mov	cl, [screen_height]	; save screen height in counter
+	dec	cl			; decrement counter because one pixel is occupied by the top side
+	dec	cl			; decrement counter because one pixel is occupied by the bottom side
+
+.lp_3:	mov	al, [screen_height]	; move into al screen height
+	sub	al, cl			; calculate current cursor y position
+	push	dword 0			; push x cursor position
+	push	eax			; push y cursor position
+	call	set_pos			; call set cursor position procedure
+	push	dword [.side_frame]	; push side frame character
+	call	print_char		; call print character procedure
+	loop	.lp_3			; jump in start of loop if ecx not zero
+
+	popad				; restore all extended registers
+
+	ret
+
+.up_frame:	db "-"			; character of top of frame
+.side_frame:	db "|"			; character of side of frame
 
 ; pop character code from stack, and print one character
 print_char:

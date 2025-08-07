@@ -1,8 +1,3 @@
-[section .data]
-test_text	db "THIS IS THE TEXT TEXT FOR DEBUG", 10, 0
-text		db "Welcome to the 'Assybler Snake' game!", 10, 0
-text_len	dw 10
-
 [section .text]
 global	_start
 extern	print_char
@@ -13,34 +8,36 @@ extern	cursor_up
 extern 	cursor_down
 extern	cursor_left
 extern	cursor_right
+extern	print_frame
+extern	welcome_screen
 
 _start:
 
 	call	clear_scr
 
-;	push	dword 50
-;	push	dword 20
-;	call	set_pos
+.welc:	call	welcome_screen
+	call	sleep
 
-	push	dword 10
-	call	cursor_down
-
-	push	dword 10
-	call	cursor_right
-
-	push	dword 5
-	call	cursor_up
-
-	push	dword 8
-	call	cursor_left
-
-	push	dword text
-	call	print_line
-
-	push	dword test_text
-	call	print_line
+	jmp	.welc
 
 	call	exit
+
+sleep:
+
+	pushad
+
+	mov	eax, 162		; nano sleep
+	mov	ebx, .timespec
+	mov	ecx, 0
+	int	0x80
+
+	popad
+
+	ret
+
+.timespec:
+	sec	dd 0
+	nsec	dd 500000000
 
 exit:
 	mov	eax, 1		; sys_exit 0x01
