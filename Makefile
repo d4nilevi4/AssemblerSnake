@@ -1,5 +1,5 @@
 TARGET = snake
-SRC = main.asm screen.asm cursor.asm
+SRC = main.asm screen.asm cursor.asm inout.asm terminal.asm
 OBJ = $(SRC:.asm=.o)
 
 all: $(TARGET)
@@ -11,4 +11,4 @@ $(TARGET): $(OBJ)
 	nasm -f elf32 $< -o $@
 
 clean:
-	rm -f *.o $(TARGET)
+	rm -f *.o
