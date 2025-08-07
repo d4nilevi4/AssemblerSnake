@@ -55,6 +55,7 @@ sleep:
 	nsec	dd 100000000
 
 exit:
+	call	clear_scr
 	call	disable_raw_mode
 	mov	eax, 1		; sys_exit 0x01
 	xor	ebx, ebx	; ebx contains error code
