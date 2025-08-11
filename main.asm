@@ -1,3 +1,11 @@
+; GAME MODE TYPES
+; 0 => welcome mode
+
+[section .bss]
+
+	need_sleep	resb 1
+	gm		resb 1			; type of game mode
+
 [section .text]
 global	_start
 extern	print_char
@@ -17,15 +25,50 @@ extern	disable_raw_mode
 
 _start:
 
+	mov	dword [need_sleep], 1
+
 	call	enable_raw_mode
 
+	push	dword 0
+
+.update:
+
+	call	handle_input
+
+	call	draw_screen
+
+	call	sleep
+
+	jmp	.update
+
+	call	exit
+
+draw_screen:
 	call	clear_scr
 
-.welc:	call	welcome_screen
-	call	sleep
+	call	welcome_screen
+
+	ret
+
+handle_input:
 
 	call	read_char
 	pop	eax
+
+	cmp	al, 0
+	je	no_need_sleep
+
+	call	handle_exit_input
+
+	ret
+
+no_need_sleep:
+
+	mov	dword [need_sleep], 0
+
+	ret
+
+handle_exit_input:
 
 	cmp	al, 113
 	je	exit
@@ -33,26 +76,30 @@ _start:
 	cmp	al, 81
 	je	exit
 
-	jmp	.welc
-
-	call	exit
+	ret
 
 sleep:
 
 	pushad
 
+;	mov	al, [need_sleep]
+;	cmp	al, 0
+;	je	.done
+
 	mov	eax, 162		; nano sleep
 	mov	ebx, .timespec
-	mov	ecx, 0
+	xor	ecx, ecx
 	int	0x80
+
+.done:	mov	dword [need_sleep], 1
 
 	popad
 
 	ret
 
 .timespec:
-	sec	dd 0
-	nsec	dd 100000000
+	dd 0				; tv_sec (0 sec)
+	dd 500000000			; tv_nsec (0.5 sec)
 
 exit:
 	call	clear_scr

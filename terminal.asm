@@ -39,6 +39,12 @@ enable_raw_mode:
 	mov	edx, termios_buf
 	int	0x80
 
+;	mov	eax, 55
+;	mov	ebx, 0
+;	mov	ecx, 4
+;	mov	edx, 0x800
+;	int	0x80
+
 	popad				; restore all extended registers
 
 	ret

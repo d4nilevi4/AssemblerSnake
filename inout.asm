@@ -5,16 +5,18 @@
 
 [section .text]
 
-global read_char
+global	read_char
+
+extern	print_char
 
 ; read one character from console and push cahracter
 read_char:
 
 	pop	dword [ret_adr]		; save return adress
-;	pop	[in_buf]		; save character pointer
-;	push	[ret_adr]		; restore return adress
 
 	pushad				; save all extended registers
+
+	mov	dword [in_buf], 0
 
 	mov	eax, 3			; sys read
 	mov	ebx, 0			; stdin
@@ -24,7 +26,19 @@ read_char:
 
 	popad
 
-	push	dword [in_buf]
+	mov	al, [in_buf]
+	cmp	al, 0
+	je	.print_z
+
+	push	dword "n"
+	call	print_char
+
+.done:	push	dword [in_buf]
 	push	dword [ret_adr]
 
 	ret
+
+.print_z:
+	push	dword "z"
+	call	print_char
+	jmp	.done
